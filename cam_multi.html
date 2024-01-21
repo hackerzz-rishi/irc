@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Feed</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .camera_feed_row {
+        display: flex;
+    }
+
+    .camera_feed_row img {
+        padding: 1rem;
+    }
+</style>
+
+<body>
+    <div class="camera_feed_row">
+        <div><img src="http://192.168.1.110:8080/video_feed_camera1" height="auto" width="100%" alt=""></div>
+        <div><img src="http://192.168.1.110:8080/video_feed_camera3" height="auto" width="100%" alt=""></div>
+        <div><img src="http://192.168.1.111:8081/video_feed_ras1" height="auto" width="100%" alt=""></div>
+    </div>
+
+    <div style="display: flex;">
+        <!-- <div><img src="http://192.168.0.137:8080/video_feed_camera4" height="300px" width="500px" alt=""></div> -->
+        <div><img src="http://192.168.1.110:8080/video_feed_camera5" height="" width="500px" alt=""></div>
+    </div>
+
+    <div style="display: flex;">
+        <div><img src="http://192.168.1.110:8080/video_feed_camera6" height="300px" width="500px" alt=""></div>
+        <div><img src="http://192.168.1.110:8080/video_feed_camera7" height="300px" width="500px" alt=""></div>
+        <div><img src="http://192.168.1.110:5000/video_feed_8" height="300px" width="500px" alt=""></div>
+    </div>
+</body>
+
+</html>
