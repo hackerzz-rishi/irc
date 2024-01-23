@@ -1,42 +1,59 @@
 import socket
 import time
 import serial 
-ser = serial.Serial("COM3" , 115200);
+ser = serial.Serial("/dev/ttyACM0" , 115200);
 s = time.time()
 # Create a UDP socket
-udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+di = { 'Direction' : s , 'Speed' : 0  }
 
-# Bind the socket to a specific IP address and port number
-receiver_address = ('192.168.0.237', 12345)  # Replace with the actual IP and port to listen on
-udp_socket.bind(receiver_address)
 
-try:
-    while True:
-        # Receive data and the address of the sender
-        data, sender_address = udp_socket.recvfrom(1024)  # Adjust buffer size as needed
+while True:
 
-        # Decode the received data
-        received_data = data.decode()
+ print("Start")
+ udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        # Process or display the received data
-        #print(received_data)
-        temp = received_data.split()
-        a1 , b1 = temp[0].split(":")
-        c1 = abs(int(float(b1)))
+ #Bind the socket to a specific IP address and port number 
+ receiver_address = ('192.168.1.110', 12345)  # Replace with the actual IP and port to listen on
+ udp_socket.bind(receiver_address)
 
-        a2 , b2 = temp[1].split(":")
-        c2 = abs(int(float(b2)))
+ print("Socket Binded ")
 
-        a3 , b3 = temp[3].split(":")
-        c3 = abs(int(float(b3)))
+ try:
+   while True:
+    #print("Data Receiving ")
+    # Receive data and the address of the sender
+    data, sender_address = udp_socket.recvfrom(1024)  # Adjust buffer size as needed
+   
+    if not data:
+     print("Data not received ")
+     break
 
-        result = "A0:"+str(c1) + "," + "A1:"+str(c2) + ","  + "A2:"+str(c3) ;
-        ser.write(result.encode())
+    # Decode the received data
+    received_data = data.decode()
 
-        ser.reset_input_buffer()
-        e = time.time()
-        print(result, e-s)
-except Exception:
-    # Handle Ctrl+C to gracefully close the socket when the script is interrupted
-    print("Receiver script interrupted. Closing socket.")
-    udp_socket.close()
+    # Process or display the received data
+    #print(received_data)
+    #ser.write(result.encode())
+	
+    #ser.reset_input_buffer()
+    e = time.time()
+    temp = received_data[2: len(received_data) - 2].split(',')
+    for i in temp:
+      a,v = i.split(':')
+      if a in di:
+        di[a] = v
+    
+    res = []
+    for i in di:
+     res.append(di[i])
+    
+    out = ",".join(res)
+    
+    print(out,e-s)
+    ser.write(out.encode())
+    ser.reset_input_buffer()
+        		
+ except Exception:
+    		# Handle Ctrl+C to gracefully close the socket when the script is interrupted
+  print("Receiver script interrupted. Closing socket.")
+  udp_socket.close()
