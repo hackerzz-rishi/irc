@@ -4,6 +4,13 @@ import time
 import pygame
 import sys
 
+# Create a UDP socket
+udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+# Set the IP address and port number of the receiver
+receiver_address = ('192.168.1.110', 12345)  # Replace with the actual IP and port of the receiversend
+
+
 sys.setrecursionlimit(10 ** 6)
 pygame.init()
 
@@ -40,8 +47,8 @@ try:
     while True:
         # Your continuous data generation or acquisition logic here
         # For example, generate some data to be sent
-        data_to_send = "Hello, UDP!"  # Replace with your actual data
-        print(data_to_send)
+        #data_to_send = "Hello, UDP!"  # Replace with your actual data
+        #print(data_to_send)
         # Send data using the UDP socket
         running = True
         while running:
@@ -51,39 +58,37 @@ try:
 
             # Read the joystick input
             joystick_data = []
-            for i in range(joystick.get_numaxes()):
-                if i == 1:
-                    axis_value = joystick.get_axis(i)
-                    axis_value = -1 * axis_value * 1024
-                    if axis_value >= 500 :
-                        joystick_data.append(f"Axis_{i}:f" )
-                    elif axis_value <= -500:
-                        joystick_data.append(f"Axis_{i}:b" )
-                elif i == 2:
-                     axis_value = joystick.get_axis(i)
-                     axis_value = -1 * axis_value * 1024
-                     if axis_value <= -500:
-                          joystick_data.append(f"Axis_{i}:l" )
-                     elif axis_value >= 500:
-                          joystick_data.append(f"Axis_{i}:r" )
-                elif i == 3:
-                    axis_value = joystick.get_axis(i)
-                    axis_value = -1 * axis_value * 1024
-                    axis_value = map_range(axis_value, -1024, 1024, 0, 255)
-                    joystick_data.append(f"Axis_{i}:{axis_value} " )
-                
-                
+            dir = " "
+            axis_value = joystick.get_axis(1)
+            axis_value1 = joystick.get_axis(2)
+            axis_value = -1 * axis_value * 1024
+            axis_value1 = -1 * axis_value1 * 1024
+            if axis_value >= 500 :
+                dir = 'f'
+            elif axis_value <= -500:
+                dir = 'b'
+            elif axis_value1 <= -500:
+                dir = 'r'
+            elif axis_value1 >= 500:
+                dir = 'l'
+            else:
+                dir = 's'
+            axis_value2 = joystick.get_axis(3)
+            joystick_data.append('Direction:'+dir)
+            axis_value2 = -1 * axis_value2 * 1024
+            axis_value2 = map_range(axis_value2, -1024, 1024, 0, 255)
+            joystick_data.append(f"Speed:{axis_value2}" )
 
                 
-            hat_x, hat_y = joystick.get_hat(0)
-            #joystick_data.append(f"Hat_Switch_X:{hat_x} Hat_Switch_Y:{hat_y} ")
+                
 
 
 
             # Combine all joystick data into a single string
-            joystick_str = ''.join(joystick_data)
+            joystick_str = ','.join(joystick_data)
+            joystick_str = "**" + joystick_str + "**"
             print(joystick_str)
-            #udp_socket.sendto(joystick_str.encode(), receiver_address)
+            udp_socket.sendto(joystick_str.encode(), receiver_address)
             time.sleep(0.01)
 
             # time.sleep(1)  # Adjust the delay as needed
@@ -92,4 +97,4 @@ try:
 except KeyboardInterrupt:
     # Handle Ctrl+C to gracefully close the socket when the script is interrupted
     print("Transmitter script interrupted. Closing socket.")
-    #udp_socket.close()
+    udp_socket.close()
