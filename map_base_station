@@ -1,0 +1,210 @@
+import socket
+
+from flask import Flask, render_template, request, jsonify
+import folium
+from geopy.distance import geodesic
+import random
+import serial
+import time
+import threading
+from serial.tools import list_ports
+from flask import Flask, Response, request, jsonify
+import time
+import threading
+import copy
+
+global ser
+app = Flask(__name__)
+
+loc = []
+
+path_coordinates = []
+robot_map = None  # Define robot_map globally
+global data
+data = dict()
+data['lat'] = 12.959563
+data['lon'] = 80.058549
+
+
+def calculate_distance(point1, point2):
+    return geodesic(point1, point2).meters
+
+
+def flask_app():
+    @app.route('/receive_data', methods=['POST'])
+    def receive_data():
+        try:
+            global data
+            data = request.json  # Assuming data is sent as JSON
+            print(data)
+            return jsonify({'message': 'Data received successfully'})
+        except Exception as e:
+            print(f"An error occurred while processing the received data: {e}")
+            return jsonify({'error': 'Failed to process the received data'}), 500
+
+
+    @app.route('/map_data')
+    def map_data():
+        global des
+        return render_template('map_data.html')
+
+    @app.route('/map')
+    def map():
+        robot_map_copy = copy.deepcopy(robot_map)
+
+        # return render_template('map.html', map_content=robot_map_copy.repr_html())
+        # return render_template('map.html', map_content=robot_map.repr_html())
+        return render_template('map.html', map_content=robot_map_copy._repr_html_())
+
+    @app.route('/update_destination', methods=['POST'])
+    def update_destination():
+        global rover_location, destination_location, destination_marker, calculate_distance, dest_lat, dest_lon, des
+        data11 = request.get_json()
+        dest_lat = float(data11['destLat'])
+        dest_lon = float(data11['destLon'])
+        destination_location = [dest_lat, dest_lon]
+        destination_marker.location = destination_location
+        distance_line.locations = [rover_location, destination_location]
+        robot_map.fit_bounds([rover_location, destination_location])
+        distance = calculate_distance(rover_location, initial_rover_location)
+        des = calculate_distance(rover_location, destination_location)
+
+        print(f'Distance: {distance:.2f} meters')
+        # map_html = robot_map.repr_html()
+        map_html = robot_map.get_root().render()
+
+        return jsonify({'map_content': map_html, 'des': des})
+
+    @app.route('/reset_map')
+    def reset_map():
+        global path_coordinates, trace_line
+        trace_line = folium.FeatureGroup(name='trace_line')
+        trace_line.add_to(robot_map)
+        path_coordinates = [rover_location]
+        init_map()
+        path_coordinates = [rover_location]
+        robot_map.save('templates/savedMap.html')
+        map_html = robot_map.repr_html()
+
+        return jsonify({'map_content': map_html})
+
+    @app.route('/distance')
+    def get_distance():
+        global rover_location, destination_location
+        distance = calculate_distance(rover_location, initial_rover_location)
+        des = calculate_distance(rover_location, destination_location)
+        return jsonify({'distance': distance, 'des': des})
+
+
+def run_flask():
+    app.run(host='0.0.0.0', port=8000, debug=True)
+
+
+def init_map():
+    global robot_map, new_rover_lat, new_rover_lon, destination_marker, rover_marker, trace_line, distance_line, distance_line_group, destination_location, dest_lat, dest_lon, path_coordinates, initial_rover_location, data
+    # Set initial rover location and destination
+    initial_rover_location = [12.959563, 80.058549]
+    initial_destination_location = [12.961291, 80.058852]
+    rover_location = initial_rover_location.copy()
+    destination_location = initial_destination_location.copy()
+
+    # Create a map centered around the initial rover's location
+    robot_map = folium.Map(location=rover_location, zoom_start=25)
+
+    # Add a marker for the rover's location with a car icon
+    car_icon = folium.CustomIcon(icon_image='static/rover-removebg.png', icon_size=(30, 30))
+    rover_marker = folium.Marker(location=rover_location, popup='Rover Location', icon=car_icon)
+    rover_marker.add_to(robot_map)
+
+    # Add a marker for the destination
+    destination_marker = folium.Marker(location=destination_location, popup='Destination')
+    destination_marker.add_to(robot_map)
+
+    # Create a FeatureGroup for the trace line (path travelled)
+    trace_line = folium.FeatureGroup(name='trace_line')
+    trace_line.add_to(robot_map)
+
+    # Create a FeatureGroup for the distance line (between rover and destination)
+    distance_line_group = folium.FeatureGroup(name='distance_line')
+    # Initialize with the initial path coordinates
+    distance_line = folium.PolyLine([rover_location, destination_location], color="red", weight=2.5, opacity=1)
+    distance_line_group.add_child(distance_line)
+    distance_line_group.add_to(robot_map)
+
+    # Save the map to an HTML file
+    robot_map.save('templates/savedMap.html')
+
+    # Keep track of the previous rover location for the trace line
+    previous_rover_location = initial_rover_location
+    # Store coordinates for the path travelled
+    path_coordinates.append(initial_rover_location)
+    new_rover_lat = 12.959556
+    new_rover_lon = 80.058555
+    dest_lat, dest_lon = 12.961758, 80.058927
+
+
+
+
+
+
+# @app.route('/map-content', methods=['GET'])
+def update_map():
+    global robot_map, rover_location, destination_location, rover_marker, destination_marker, trace_line, distance_line_group, distance_line, path_coordinates, previous_rover_location, new_rover_lon, new_rover_lat, data
+    global data
+    while True:     # Get new rover location from the  terminal
+                    new_rover_lat = data['lat']
+                    new_rover_lon = data['lon']
+                    rover_location = [new_rover_lat, new_rover_lon]
+                    loc.append(rover_location)
+                    print(rover_location, 'map')
+
+                    # Get new destination location from the terminal
+                    new_dest_lat = dest_lat
+                    new_dest_lon = dest_lon
+                    destination_location = [new_dest_lat, new_dest_lon]
+
+                    # Add the new rover location to the path coordinates
+                    path_coordinates.append(rover_location)
+
+                    # Clear the map
+                    robot_map = folium.Map(location=rover_location, zoom_start=25)
+
+                    # Add a marker for the rover's location with a car icon
+                    rover_marker.location = rover_location
+                    rover_marker.add_to(robot_map)
+
+                    # Add a marker for the destination
+                    destination_marker.location = destination_location
+                    destination_marker.add_to(robot_map)
+
+                    # Add the trace line (path travelled)
+                    trace_line.add_child(folium.PolyLine(locations=path_coordinates, color="blue", weight=2.5, opacity=1))
+                    trace_line.add_to(robot_map)
+
+                    # Add the distance line (between rover and destination)
+                    distance_line.locations = [rover_location, destination_location]
+                    distance_line_group.add_to(robot_map)
+
+                    distance = calculate_distance(rover_location, destination_location)
+                    print(f'Distance: {distance:.2f} meters')
+
+                    # Zoom to the new rover location
+                    robot_map.fit_bounds([rover_location, destination_location])
+                    # Save the map to an HTML file
+                    robot_map.save('templates/savedMap.html')
+
+                    # Update the previous rover location for the next iteration
+                    previous_rover_location = rover_location
+                    print("completed")
+                    time.sleep(2)
+
+
+
+if __name__ == '__main__':
+    init_map()
+    map_update_thread = threading.Thread(target=update_map)
+    map_update_thread.start()
+    flask_thread = threading.Thread(target=flask_app)
+    flask_thread.start()
+
+    run_flask()
