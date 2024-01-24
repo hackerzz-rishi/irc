@@ -76,28 +76,25 @@ try:
             speed = joystick.get_axis(3) * -1024
             speed = map_range(speed, -1024, 1024, 0, 255)
             joystick_data.append(str(speed))
-            
+
             dir = "s"
-            for i in [1,2]:
-                axis_value = joystick.get_axis(i) * -1024
-                if i == 1:
-                    if axis_value >= 500:
-                        dir = 'u'
-                    elif axis_value <= -500:
-                        dir = 'd'
-                elif i == 2:
-                    if axis_value <= -500:
-                        dir = 'r'
-                    elif axis_value >= 500:
-                        dir = 'l'
-            if joystick.get_button(2):
+
+            if (joystick.get_axis(1) * -1024) >= 500:
+                dir = 'u'
+            elif (joystick.get_axis(1) * -1024) <= -500:
+                dir = 'd'
+            elif (joystick.get_axis(2) * -1024) <= -500:
+                dir = 'r'
+            elif (joystick.get_axis(2) * -1024) >= 500:
+                dir = 'l'
+            elif joystick.get_button(2):
                 dir = 'x'
             elif joystick.get_button(3):
                 dir = 'v'
             elif joystick.get_button(4):
                 dir = 'z'
             elif joystick.get_button(5):
-                dir = 'x'
+                dir = 'c'
             else:
                 dir = 's'
 
