@@ -4,6 +4,18 @@ import time
 import pygame
 import sys
 
+import logging
+
+# Configure the logging module
+logging.basicConfig(
+    level=logging.INFO,  # Set the logging level (e.g., INFO, DEBUG)
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('joystick_tx.log'),  # Log to a file
+        logging.StreamHandler()  # Log to the console
+    ]
+)
+
 # Create a UDP socket
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -16,16 +28,21 @@ pygame.joystick.init()
 
 # Get the number of connected joysticks
 num_joysticks = pygame.joystick.get_count()
+logging.info("Number of JoyStick: %s", num_joysticks)
 
 joystick = None  # Initialize the variable outside the if block
 
 if num_joysticks > 0:
     # Get the first joystick
     joystick = pygame.joystick.Joystick(0)
+    logging.info("Joystick Brand: %s", joystick)
     joystick.init()
     print(f"Joystick Name: {joystick.get_name()}")
+    logging.info("Joystick Name: %s", joystick.get_name())
 else:
     print("No joysticks found.")
+    logging.info("Error: %s", "No joysticks found.")
+    
 
 
 def map_range(value, from_min, from_max, to_min, to_max):
@@ -103,6 +120,7 @@ try:
             joystick_str = ','.join(joystick_data)
 
             print(joystick_str)
+            logging.info("joystick Data: %s", joystick_str)
             udp_socket.sendto(joystick_str.encode(), receiver_address)
             time.sleep(0.1)
 
@@ -112,4 +130,5 @@ try:
 except KeyboardInterrupt:
     # Handle Ctrl+C to gracefully close the socket when the script is interrupted
     print("Transmitter script interrupted. Closing socket.")
+    logging.info("Transmitter script interrupted. Closing socket.")
     udp_socket.close()
