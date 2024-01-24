@@ -13,6 +13,16 @@ import time
 import threading
 import copy
 
+# Configure the logging module
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('map_base_station.log'),
+        logging.StreamHandler()
+    ]
+)
+
 global ser
 app = Flask(__name__)
 
@@ -37,9 +47,11 @@ def flask_app():
             global data
             data = request.json  # Assuming data is sent as JSON
             print(data)
+            logging.info("Received GPS", data)
             return jsonify({'message': 'Data received successfully'})
         except Exception as e:
             print(f"An error occurred while processing the received data: {e}")
+            logging.info("An error occurred while processing the received data: %s",e)
             return jsonify({'error': 'Failed to process the received data'}), 500
 
 
@@ -154,6 +166,8 @@ def update_map():
     while True:     # Get new rover location from the  terminal
                     new_rover_lat = data['lat']
                     new_rover_lon = data['lon']
+                    logging.info("Mapping GPS Latitude %s", new_rover_lat)
+                    logging.info("Mapping GPS Longitude %s", new_rover_lon)
                     rover_location = [new_rover_lat, new_rover_lon]
                     loc.append(rover_location)
                     print(rover_location, 'map')
