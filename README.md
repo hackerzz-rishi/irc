@@ -112,6 +112,3 @@ video.html                   # Webpage for displaying video feeds
 
 - Deepak Rishi G and Dhanush Kumar V
 
-## License
-
-- Specify your license here (e.g., MIT, GPL, etc.)
