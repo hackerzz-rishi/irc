@@ -110,7 +110,7 @@ video.html                   # Webpage for displaying video feeds
 
 ## Authors
 
-- Your Team Name / Contributors
+- Deepak Rishi G and Dhanush Kumar V
 
 ## License
 
